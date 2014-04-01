@@ -1,4 +1,4 @@
 lohr
 ====
 
-an url shorten service
+A simple url shorten service based on Tornado, Redis
