@@ -11,11 +11,8 @@ from . import settings
 c = tornadoredis.Client(**settings.REDIS_CONNECTION)
 c.connect()
 
-@tornado.gen.engine
-def generate_urlcode(redirect_url, callback):
-    if not callback:
-        raise AttributeError()
-
+@tornado.gen.coroutine
+def generate_urlcode(redirect_url):
     new_id = yield tornado.gen.Task(c.incr, settings.URL_CODE_ID_REDIS_NAME)
     code = basehash.base62().encode(new_id)
 
@@ -25,4 +22,4 @@ def generate_urlcode(redirect_url, callback):
                            settings.URL_CODE_REDIS_BASE_NAME.format(code=code),
                            redirect_url)
 
-    callback(code)
+    raise tornado.gen.Return(code)

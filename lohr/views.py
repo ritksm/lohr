@@ -23,11 +23,18 @@ def get_client_ip(request):
 
     return ip
 
+@tornado.gen.coroutine
+def log_request_detail(code, request):
+    # incr request count
+    result = yield tornado.gen.Task(c.incr, settings.URL_REDIRECT_REQUEST_COUNT_REDIS_BASE_NAME.format(code=code))
+
+    ip = get_client_ip(request)
+
 
 class RedirectHandler(tornado.web.RequestHandler):
 
     @tornado.web.asynchronous
-    @tornado.gen.engine
+    @tornado.gen.coroutine
     def get(self, code):
         if not code:
             self.redirect('/')
@@ -37,11 +44,8 @@ class RedirectHandler(tornado.web.RequestHandler):
             if key_exists:
                 redirect_url = yield tornado.gen.Task(c.get, name)
 
-                # gather information
-                ip = get_client_ip(self.request)
-                # incr request count
-                result = yield tornado.gen.Task(c.incr,
-                                                settings.URL_REDIRECT_REQUEST_COUNT_REDIS_BASE_NAME.format(code=code))
+                # log request detail
+                yield tornado.gen.Task(log_request_detail, code, self.request)
 
                 self.redirect(redirect_url)
             else:
@@ -49,18 +53,17 @@ class RedirectHandler(tornado.web.RequestHandler):
 
 
 class GenerateHandler(tornado.web.RequestHandler):
-    def generate_callback(self, url_code):
-        self.write(url_code)
-        self.finish()
 
     @tornado.web.asynchronous
-    @tornado.gen.engine
+    @tornado.gen.coroutine
     def post(self):
         url = self.get_argument('url', '')
         if not url:
             self.redirect('/')
         else:
-            model.generate_urlcode(url, self.generate_callback)
+            url_code = yield tornado.gen.Task(model.generate_urlcode, url)
+            self.write(url_code)
+            self.finish()
 
 
 class IndexHandler(tornado.web.RequestHandler):
