@@ -12,3 +12,5 @@ REDIS_CONNECTION = local_settings.REDIS_CONNECTION
 URL_CODE_REDIS_BASE_NAME = 'redirect:urlcode:{code}'
 URL_CODE_ID_REDIS_NAME = 'redirect:url:id'
 URL_CODE_SET_NAME = 'redirect:url:all'
+
+URL_REDIRECT_REQUEST_COUNT_REDIS_BASE_NAME = 'redirect:url:request:count:{code}'

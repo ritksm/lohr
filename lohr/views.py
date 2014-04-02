@@ -3,7 +3,6 @@
 
 __author__ = 'Jack River'
 
-import basehash
 import tornado.web
 import tornado.gen
 import tornadoredis
@@ -11,6 +10,18 @@ from . import settings, model
 
 c = tornadoredis.Client(**settings.REDIS_CONNECTION)
 c.connect()
+
+
+def get_client_ip(request):
+    x_forwarded_for = request.headers.get('X-FORWARDED-FOR', '')
+    if x_forwarded_for:
+        ip = x_forwarded_for.split(',')[0]
+    else:
+        ip = request.headers.get('REMOTE-ADDR', '')
+        if not ip:
+            ip = request.headers.get('X-Real-IP', '')
+
+    return ip
 
 
 class RedirectHandler(tornado.web.RequestHandler):
@@ -25,6 +36,13 @@ class RedirectHandler(tornado.web.RequestHandler):
             key_exists = yield tornado.gen.Task(c.exists, name)
             if key_exists:
                 redirect_url = yield tornado.gen.Task(c.get, name)
+
+                # gather information
+                ip = get_client_ip(self.request)
+                # incr request count
+                result = yield tornado.gen.Task(c.incr,
+                                                settings.URL_REDIRECT_REQUEST_COUNT_REDIS_BASE_NAME.format(code=code))
+
                 self.redirect(redirect_url)
             else:
                 self.redirect('/')
