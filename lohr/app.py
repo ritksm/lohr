@@ -9,6 +9,7 @@ import tornado.ioloop
 import tornado.web
 from tornado.options import define, options
 from lohr.handlers import *
+import settings
 
 define("port", default=8888, type=int)
 define("config_file", default="app_config.yml", help="app_config file")
@@ -16,10 +17,12 @@ define("config_file", default="app_config.yml", help="app_config file")
 
 class Application(tornado.web.Application):
     def __init__(self, **overrides):
-        handlers = [(r'/', IndexHandler),
-                    (r'/go/(\w+)', RedirectHandler),
-                    (r'/gen/', GenerateHandler),
-                    ]
+        handlers = [
+            (r'/static/(.*)', tornado.web.StaticFileHandler, {'path': settings.STATIC_ROOT}),
+            (r'/', IndexHandler),
+            (r'/go/(\w+)', RedirectHandler),
+            (r'/generate/', GenerateHandler),
+        ]
 
         tornado.web.Application.__init__(self, handlers)
 

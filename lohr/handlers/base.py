@@ -8,9 +8,12 @@ import tornado.gen
 import tornadoredis
 from lohr import settings, models, utils
 import threading
+from jinja2 import Environment, PackageLoader
 
 c = tornadoredis.Client(**settings.REDIS_CONNECTION)
 c.connect()
+
+jinja_env = Environment(loader=PackageLoader('lohr', 'templates'))
 
 
 class RequestDetailLogger(threading.Thread):
@@ -60,11 +63,12 @@ class GenerateHandler(tornado.web.RequestHandler):
             self.redirect('/')
         else:
             url_code = yield tornado.gen.Task(models.generate_urlcode, url)
-            self.write(url_code)
+            self.write(''.join([settings.HOST, '/go/', url_code]))
             self.finish()
 
 
 class IndexHandler(tornado.web.RequestHandler):
 
     def get(self):
-        self.write('Welcome to Lohr!')
+        template = jinja_env.get_template('index.html')
+        self.write(template.render())
