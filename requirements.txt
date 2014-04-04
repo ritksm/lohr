@@ -1,3 +1,4 @@
 tornado
 tornado-redis
 basehash
+jinja2
