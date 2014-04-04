@@ -6,7 +6,7 @@ __author__ = 'Jack River'
 import tornado.web
 import tornado.gen
 import tornadoredis
-from . import settings, model
+from lohr import settings, models
 
 c = tornadoredis.Client(**settings.REDIS_CONNECTION)
 c.connect()
@@ -61,7 +61,7 @@ class GenerateHandler(tornado.web.RequestHandler):
         if not url:
             self.redirect('/')
         else:
-            url_code = yield tornado.gen.Task(model.generate_urlcode, url)
+            url_code = yield tornado.gen.Task(models.generate_urlcode, url)
             self.write(url_code)
             self.finish()
 

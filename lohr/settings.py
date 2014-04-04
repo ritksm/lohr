@@ -3,7 +3,7 @@
 
 __author__ = 'Jack River'
 
-from . import local_settings
+import local_settings
 
 DEBUG = local_settings.DEBUG
 

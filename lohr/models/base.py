@@ -6,7 +6,7 @@ __author__ = 'Jack River'
 import basehash
 import tornadoredis
 import tornado.gen
-from . import settings
+from lohr import settings
 
 c = tornadoredis.Client(**settings.REDIS_CONNECTION)
 c.connect()
