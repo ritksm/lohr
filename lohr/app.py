@@ -3,6 +3,11 @@
 
 __author__ = 'Jack River'
 
+import os
+import sys
+BASE_DIR = os.path.dirname(os.path.dirname(__file__))
+sys.path.append(os.path.dirname(BASE_DIR))  # append to PYTHONPATH
+
 import tornado.options
 import tornado.httpserver
 import tornado.ioloop
