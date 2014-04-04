@@ -3,32 +3,33 @@
 
 __author__ = 'Jack River'
 
+import logging
+logging.basicConfig()
 import tornado.web
 import tornado.gen
 import tornadoredis
-from lohr import settings, models
+from lohr import settings, models, utils
+import threading
 
 c = tornadoredis.Client(**settings.REDIS_CONNECTION)
 c.connect()
 
 
-def get_client_ip(request):
-    x_forwarded_for = request.headers.get('X-FORWARDED-FOR', '')
-    if x_forwarded_for:
-        ip = x_forwarded_for.split(',')[0]
-    else:
-        ip = request.headers.get('REMOTE-ADDR', '')
-        if not ip:
-            ip = request.headers.get('X-Real-IP', '')
+class RequestDetailLogger(threading.Thread):
+    """ request detail logger in another thread
+    """
+    def __init__(self, callback=None, *args, **kwargs):
+        self.code = kwargs.pop('code')
+        self.request = kwargs.pop('request')
+        super(RequestDetailLogger, self).__init__(*args, **kwargs)
+        self.callback = callback
 
-    return ip
-
-@tornado.gen.coroutine
-def log_request_detail(code, request):
-    # incr request count
-    result = yield tornado.gen.Task(c.incr, settings.URL_REDIRECT_REQUEST_COUNT_REDIS_BASE_NAME.format(code=code))
-
-    ip = get_client_ip(request)
+    @tornado.gen.coroutine
+    def run(self):
+        # increase request count
+        result = yield tornado.gen.Task(c.incr,
+                                        settings.URL_REDIRECT_REQUEST_COUNT_REDIS_BASE_NAME.format(code=self.code))
+        ip = utils.get_client_ip(self.request)
 
 
 class RedirectHandler(tornado.web.RequestHandler):
@@ -44,9 +45,9 @@ class RedirectHandler(tornado.web.RequestHandler):
             if key_exists:
                 redirect_url = yield tornado.gen.Task(c.get, name)
 
-                # log request detail
-                yield tornado.gen.Task(log_request_detail, code, self.request)
+                RequestDetailLogger(code=code, request=self.request).start()
 
+                print 'redirect'
                 self.redirect(redirect_url)
             else:
                 self.redirect('/')
