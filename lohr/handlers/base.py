@@ -3,8 +3,6 @@
 
 __author__ = 'Jack River'
 
-import logging
-logging.basicConfig()
 import tornado.web
 import tornado.gen
 import tornadoredis
@@ -47,7 +45,6 @@ class RedirectHandler(tornado.web.RequestHandler):
 
                 RequestDetailLogger(code=code, request=self.request).start()
 
-                print 'redirect'
                 self.redirect(redirect_url)
             else:
                 self.redirect('/')
